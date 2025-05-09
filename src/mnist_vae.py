@@ -63,7 +63,7 @@ class VAE(tf.keras.Model):
             reconstruction = self.decoder(z)
 
             # Reconstruction loss (BCE)
-            reconstruction_loss = tf.reduce_mean(tf.square(data - reconstruction))
+            reconstruction_loss = tf.keras.losses.binary_crossentropy(data, reconstruction)
 
 
             # KL divergence loss
