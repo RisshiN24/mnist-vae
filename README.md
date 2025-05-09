@@ -1,3 +1,3 @@
 This project implements a Convolutional Variational Autoencoder (Conv-VAE) trained on the MNIST handwritten digit dataset using TensorFlow and Keras. The model is built using a modular, object-oriented design with custom training logic and support for tuning the KL divergence weight (β). It currently uses convolutional and fully connected layers for the encoder and decoder and uses binary crossentropy for the reconstruction loss function. The goal is to learn a compact latent representation of digits and reconstruct them accurately. Future updates will include a conditional VAE (CVAE) architecture for improved image quality.
 
-![Comparison Image](src/comparison.jpg)
+![Comparison Image](src/comparison.png)
