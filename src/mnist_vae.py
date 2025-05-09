@@ -147,7 +147,7 @@ def visualize_results(vae, x_train):
         plt.axis('off')
 
     plt.tight_layout()
-    plt.show()
     plt.savefig("comparison.png")
+    plt.show()
 
 visualize_results(vae, x_train)
