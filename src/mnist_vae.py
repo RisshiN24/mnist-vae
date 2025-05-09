@@ -103,7 +103,7 @@ def train_model(latent_dim=10):
     # Initialize parts
     encoder = ConvEncoder(latent_dim)
     decoder = ConvDecoder()
-    vae = VAE(encoder, decoder, beta=1.0) # Can play around with
+    vae = VAE(encoder, decoder, beta=0.1) # Can play around with
 
     # Add an learning rate scheduler
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -116,7 +116,7 @@ def train_model(latent_dim=10):
     vae.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule))
 
     # Train
-    vae.fit(x_train, epochs=3, batch_size=128)
+    vae.fit(x_train, epochs=5, batch_size=128, callbacks=[EarlyStopping(monitor='loss', patience=3)])
 
     # Return model
     return vae
@@ -148,5 +148,6 @@ def visualize_results(vae, x_train):
 
     plt.tight_layout()
     plt.show()
+    plt.savefig("comparison.png")
 
 visualize_results(vae, x_train)
