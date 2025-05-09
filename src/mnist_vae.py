@@ -65,7 +65,6 @@ class VAE(tf.keras.Model):
             # Reconstruction loss (BCE)
             reconstruction_loss = tf.keras.losses.binary_crossentropy(data, reconstruction)
 
-
             # KL divergence loss
             kl_loss = -0.5 * tf.reduce_sum(1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var), axis=1)
 
@@ -89,7 +88,7 @@ def load_data():
 x_train = load_data()
 
 # Train model
-def train_model(latent_dim=2):
+def train_model(latent_dim=10):
     original_dim = 784  # 28x28 images, flattened
 
     # Initialize parts
