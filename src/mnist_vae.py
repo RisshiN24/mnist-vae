@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras import layers # type: ignore
-from tensorflow.keras.callbacks import EarlyStopping # type: ignore
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau # type: ignore
 import matplotlib.pyplot as plt
 
 # Encoder class
@@ -84,7 +84,35 @@ class VAE(tf.keras.Model):
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
 
-        return {"loss": total_loss} # We'll track during training
+        return {
+            "loss": total_loss,
+            "reconstruction_loss": tf.reduce_mean(reconstruction_loss),
+            "kl_loss": tf.reduce_mean(kl_loss),
+        }
+
+    # Custom test step (so we can log validation losses)
+    def test_step(self, data):
+        if isinstance(data, tuple):
+            data = data[0]  # ignore labels
+
+        z, z_mean, z_log_var = self.encoder(data)
+        reconstruction = self.decoder(z)
+
+        reconstruction_loss = tf.reduce_sum(
+            tf.keras.losses.binary_crossentropy(data, reconstruction), axis=[1, 2]
+        )
+        kl_loss = -0.5 * tf.reduce_sum(
+            1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var), axis=1
+        )
+        total_loss = tf.reduce_mean(reconstruction_loss + self.beta * kl_loss)
+
+        return {
+            "loss": total_loss,
+            "reconstruction_loss": tf.reduce_mean(reconstruction_loss),
+            "kl_loss": tf.reduce_mean(kl_loss),
+        }
+
+
     
 # Load data
 def load_data():
@@ -103,20 +131,24 @@ def train_model(latent_dim=10):
     # Initialize parts
     encoder = ConvEncoder(latent_dim)
     decoder = ConvDecoder()
-    vae = VAE(encoder, decoder, beta=0.1) # Can play around with
+    vae = VAE(encoder, decoder, beta=1.0) # Can play around with
 
     # Add an learning rate scheduler
-    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=0.0005,
-        decay_steps=1000,
-        decay_rate=0.95
+    lr_schedule = ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.2,
+        patience=5,
+        min_lr=0.00001
     )
 
+    # Add early stopping
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10)   
+
     # Compile with Adam optimizer
-    vae.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule))
+    vae.compile(optimizer=tf.keras.optimizers.Adam(), loss=None) # loss=None because we have custom loss in train_step()
 
     # Train
-    vae.fit(x_train, epochs=5, batch_size=128, callbacks=[EarlyStopping(monitor='loss', patience=3)])
+    vae.fit(x_train, epochs=50, batch_size=128, validation_split=0.2, callbacks=[lr_schedule, early_stopping])
 
     # Return model
     return vae
